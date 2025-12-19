@@ -52,7 +52,7 @@ V12 findings will be posted in this section within the first two days of the com
 
 ## Publicly known issues
 
-_Anything included in this section is considered a publicly known issue and is therefore ineligible for awards._
+_Anything included in this section and its subsection is considered a publicly known issue and is therefore ineligible for awards._
 
 **System & Token Limitations**
 
@@ -96,6 +96,32 @@ _Anything included in this section is considered a publicly known issue and is t
 **Out of Scope**
 
 - Front-running via insufficient slippage specification is not in scope
+
+### Additional Findings from Nethermind pre-contest
+
+1. **Double Penalty / Index Update**
+
+   Users pay the interest penalty even when using phantom shares for interest payment. In force exercise scenarios, the user pays in `delegate(...)` and their borrow index is also updated in `_accrueInterest`. In the regular penalty case, the index is not updated.
+
+2. **Masking Insolvency Magnitude**
+
+   While the else cases in `_getMargin(...)` correctly resolve the staleness issue, the if statement (where interest owed > balance) masks the true deficit magnitude. Since `_getMargin(...)` is used in `isAccountSolvent(...)`, setting interest (requirement) to the balance value hides the actual funds shortage.
+   
+   **Example:** Alice owes 100 interest with a balance of 20. Setting interest to 20 and balance to 0 shows a deficit of 20 instead of the actual deficit of 80.
+
+3. **Broken Bonus Calculations**
+
+   The if statement logic in `_getMargin(...)` breaks bonus calculations by hiding the true deficit. The values of bonus cross and threshold cross are calculated based on the masked deficit rather than the actual shortage.
+
+4. **Orphan Shares in Delegate/Revoke**
+
+   The `delegate(...)` to `revoke(...)` interaction creates shares not owned by anyone, breaking the supply invariant. In force exercise scenarios:
+
+   1. User starts with balance X.
+   2. **Delegate:** User balance inflates to inflation + X, then decrements by X due to insufficient interest payment. Balance = inflation.
+   3. **Settle Burn / Accrue Interest:** Y shares are burned to cover interest (sufficient phantom balance). Total supply decreases by Y. User balance = inflation - Y.
+   4. **Revoke:** Since inflation > balance, user balance is zeroed and total supply is restored by adding Y (inflation - (inflation - Y)).
+   5. **Result:** Net change in total supply is 0 (-Y burn +Y restore). The original X shares remain in total supply but are owned by no one.
 
 # Overview
 
@@ -495,7 +521,9 @@ The following command can be issued to execute all tests within the repository:
 
 ```sh
 forge test
-``` 
+```
+
+Wardens are expected to populate the [foundry.toml](https://github.com/code-423n4/2025-12-panoptic/blob/main/foundry.toml) file with their own `eth_rpc_url` and `sepolia` infura endpoints.
 
 ### Submission PoCs
 
