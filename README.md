@@ -13,9 +13,12 @@
 ### ❗ Important notes for wardens
 
 1. A coded, runnable PoC is required for all High/Medium submissions to this audit.
-    - This repo includes a basic template to run the test suite.
-    - PoCs must use the test suite provided in this repo.
-    - Your submission will be marked as Insufficient if the POC is not runnable and working with the provided test suite.
+    - Wardens are instructed to utilize the test suite of the project to illustrate the vulnerabilities they identify. (See [Submission PoC's](https://github.com/code-423n4/2025-12-panoptic/blob/main/README.md#submission-pocs))
+        - If using an existing test suite, please provide the absolute path of the original test file and the location to put the test function.
+    - If a custom configuration is desired, wardens are advised to create their own PoC file that should be executable within the `test subfolder` of this contest. The entire file and its absolute path must be submitted.
+    - Your submission will be marked as Insufficient if the POC is not runnable.
+    - Lack of POC run instructions may result in an Insufficient verdict for wardens with signal < 0.68.
+    - POCs which are only theoretical and do not demonstrate a real-world behavior (i.e., do not interact with Panoptic contracts in any way) may result in an Insufficient verdict for wardens with signal < 0.68.
     - Exception: PoC is optional (though recommended) for wardens with signal ≥ 0.68.
 2. Judging phase risk adjustments (upgrades/downgrades):
     - High- or Medium-risk submissions downgraded by the judge to Low-risk (QA) will be ineligible for awards.
