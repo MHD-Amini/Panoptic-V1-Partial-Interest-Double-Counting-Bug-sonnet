@@ -1,0 +1,37 @@
+diff --git a/contracts/CollateralTracker.sol b/contracts/CollateralTracker.sol
+index 1234567..abcdefg 100644
+--- a/contracts/CollateralTracker.sol
++++ b/contracts/CollateralTracker.sol
+@@ -927,11 +927,29 @@ contract CollateralTracker is ERC20Minimal, Multicall {
+                             userBalance
+                         );
+ 
+                         /// Insolvent case: Pay what you can
+                         _burn(_owner, userBalance);
+ 
+-                        /// @dev DO NOT update index. By keeping the user's old baseIndex, their debt continues to compound correctly from the original point in time.
+-                        userBorrowIndex = userState.rightSlot();
++                        /// @dev FIX H-01: Update index after partial payment to prevent double counting
++                        
++                        // Calculate unpaid interest (in asset units)
++                        uint128 unpaidInterest = userInterestOwed - burntInterestValue;
++                        
++                        // Convert unpaid interest back to principal units
++                        // Formula: unpaidPrincipal = unpaidInterest * userBorrowIndex / currentBorrowIndex
++                        // This "de-accrues" the unpaid interest to get the principal equivalent
++                        uint128 unpaidPrincipal = uint128(
++                            Math.mulDiv(
++                                unpaidInterest,
++                                uint128(userState.rightSlot()), // User's old borrow index
++                                currentBorrowIndex
++                            )
++                        );
++                        
++                        // Capitalize unpaid interest into netBorrows
++                        netBorrows += int128(unpaidPrincipal);
++                        
++                        // Update user's borrow index to prevent double counting
++                        userBorrowIndex = int128(currentBorrowIndex);
+                     } else {
+                         // set interest paid to zero
+                         burntInterestValue = 0;
